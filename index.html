@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>魔法拼字小學堂 - 寶可夢大冒險 V2.3</title>
+    <style>
+        /* ================= 寶可夢主題風格 (CSS) ================= */
+        :root {
+            --poke-yellow: #FFCB05;
+            --poke-blue: #2A75BB;
+            --poke-dark-blue: #3C5AA6;
+            --poke-red: #EE1515;
+            --bg-color: #F8F9FA;
+            --text-color: #2D3748;
+            --error-color: #FFCDD2; 
+            --hint-color: #64B5F6;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Comic Sans MS', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+        
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef08a 100%);
+            color: var(--text-color);
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            min-height: 100vh; touch-action: manipulation; overflow-x: hidden;
+            position: relative;
+        }
+
+        .screen { display: none; width: 100%; max-width: 1050px; padding: 20px; text-align: center; position: relative; z-index: 10; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { 
+            color: var(--poke-blue); font-size: 2.2rem; margin-top: 10px; margin-bottom: 10px; 
+            text-shadow: 3px 3px 0px var(--poke-yellow), 5px 5px 0px var(--poke-dark-blue);
+            letter-spacing: 2px;
+        }
+
+        .nav-instruction {
+            font-size: 1.1rem; font-weight: bold; color: var(--poke-red);
+            margin-bottom: 8px; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .top-nav {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;
+            padding: 12px; background-color: rgba(255, 255, 255, 0.9); border-radius: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1); border: 3px solid var(--poke-yellow);
+        }
+        .nav-btn {
+            padding: 8px 16px; background-color: var(--poke-yellow); color: var(--poke-dark-blue);
+            border: 3px solid var(--poke-blue); border-radius: 25px; font-weight: bold; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 0px var(--poke-blue);
+        }
+        .nav-btn.active { background-color: var(--poke-red); color: white; border-color: #990000; box-shadow: 0 4px 0px #990000; }
+        .nav-btn.upload-btn { background-color: #10B981; color: white; border-color: #047857; box-shadow: 0 4px 0px #047857; }
+        .nav-btn:hover { transform: translateY(-2px); }
+
+        .count-nav {
+            display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 15px;
+            background: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 20px; border: 2px dashed var(--poke-blue);
+        }
+        .count-btn {
+            padding: 5px 12px; background-color: #E2E8F0; color: #4A5568; border: 2px solid #CBD5E1;
+            border-radius: 15px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+        }
+        .count-btn.active { background-color: var(--poke-blue); color: white; border-color: var(--poke-dark-blue); }
+
+        /* 左右雙欄區域 */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-top: 5px;
+        }
+
+        .left-panel {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 15px;
+            border-radius: 25px;
+            border: 3px solid var(--poke-yellow);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .image-container {
+            width: 100%; height: 320px; margin: 0 auto 10px;
+            background-color: #fff; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #666; overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); border: 4px solid var(--poke-yellow);
+        }
+        .image-container img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .chinese-meaning { 
+            font-size: 1.8rem; font-weight: bold; margin-top: 5px; color: var(--poke-blue); 
+            min-height: 42px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* 填空練習例句與漸進提示展示框 */
+        .sentence-box {
+            font-size: 1.25rem; font-weight: bold; color: #1E293B;
+            background: #F1F5F9; border: 2px dashed var(--poke-blue);
+            padding: 12px 15px; border-radius: 16px; margin-top: 10px;
+            line-height: 1.5; word-break: break-word; text-align: center;
+        }
+        .hint2-badge {
+            display: inline-block; font-size: 0.95rem; color: #6B21A8;
+            background: #F3E8FF; padding: 4px 10px; border-radius: 12px;
+            margin-top: 6px; border: 1px solid #D8B4FE; font-weight: bold;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .course-title {
+            font-size: 1.1rem; font-weight: bold; color: var(--poke-dark-blue);
+            background: #ffffff; padding: 6px 16px; border-radius: 20px;
+            border: 2px solid var(--poke-yellow); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .status-bar {
+            display: flex; justify-content: space-around; align-items: center;
+            font-size: 1.2rem; background: #FFF9C4; padding: 8px 15px;
+            border-radius: 25px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: 3px dashed var(--poke-yellow);
+        }
+        .score-display { font-weight: bold; color: #D97706; }
+        .lives-display { letter-spacing: 4px; }
+
+        .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 5px 0; align-items: center; }
+        .icon-btn {
+            background-color: var(--poke-yellow); color: var(--poke-dark-blue); border: 3px solid var(--poke-blue);
+            border-radius: 50%; width: 50px; height: 50px; font-size: 1.3rem; cursor: pointer;
+            box-shadow: 0 4px 0px var(--poke-blue); transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0px var(--poke-blue); }
+        .icon-btn.recording { background-color: var(--poke-red); color: white; border-color: #990000; animation: pulse 0.8s infinite; }
+
+        /* 語音輸入控制面板與形象化字母顯示區 */
+        .speech-panel {
+            display: none; background: #EFF6FF; border: 2px dashed var(--poke-blue);
+            border-radius: 18px; padding: 10px; margin-top: 5px; text-align: center;
+        }
+        .speech-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        .speech-timer { font-weight: bold; color: var(--poke-red); font-size: 1.1rem; margin-bottom: 5px; }
+        
+        .spoken-bubbles-container {
+            display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; min-height: 40px; align-items: center; margin: 6px 0;
+        }
+        .spoken-bubble {
+            background: var(--poke-yellow); color: var(--poke-dark-blue); font-weight: bold;
+            font-size: 1.3rem; width: 34px; height: 34px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 0px var(--poke-blue); animation: popGold 0.3s ease;
+        }
+
+        .stop-speech-btn {
+            background: var(--poke-red); color: white; border: 2px solid #990000;
+            padding: 5px 15px; border-radius: 15px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 3px 0px #990000; transition: all 0.2s; font-size: 0.9rem;
+        }
+        .stop-speech-btn:hover { transform: scale(1.05); }
+
+        .speed-badge {
+            background: #ffffff; border: 2px solid var(--poke-blue); border-radius: 15px;
+            padding: 4px 10px; font-size: 0.85rem; font-weight: bold; color: var(--poke-dark-blue);
+            cursor: pointer; user-select: none; transition: all 0.2s; display: flex; align-items: center;
+        }
+        .speed-badge:hover { background: var(--poke-yellow); }
+
+        .word-display {
+            display: flex; justify-content: center; gap: 8px; min-height: 85px; flex-wrap: wrap;
+            cursor: text; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 20px;
+            border: 2px solid #E2E8F0; align-items: center;
+        }
+        
+        .letter-box {
+            width: 38px; height: 50px; border-bottom: 4px solid var(--poke-dark-blue);
+            font-size: 2rem; font-weight: bold; display: flex; color: var(--poke-dark-blue);
+            align-items: flex-end; justify-content: center; padding-bottom: 5px;
+            text-transform: lowercase; transition: all 0.2s ease;
+        }
+        
+        .letter-box.correct-pop {
+            animation: popGold 0.4s ease-out;
+            color: #D97706; border-bottom-color: var(--poke-yellow);
+        }
+        @keyframes popGold {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); background-color: #FEF08A; border-radius: 8px; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes flashHint {
+            0% { background-color: transparent; }
+            50% { background-color: var(--hint-color); color: white; transform: scale(1.15); border-radius: 6px; }
+            100% { background-color: transparent; }
+        }
+        .letter-box.hinting { animation: flashHint 1s infinite; border-bottom-color: var(--hint-color); }
+        
+        .symbol-box {
+            width: 20px; height: 50px; font-size: 1.8rem; font-weight: bold; 
+            display: flex; align-items: center; justify-content: center; color: #888;
+        }
+
+        #mobile-input { opacity: 0; position: absolute; z-index: -1; pointer-events: none; }
+
+        /* 兩側寶可夢真實角色動態打氣元件 */
+        .pokemon-cheer {
+            position: fixed; bottom: 20px; z-index: 100; display: flex; flex-direction: column; align-items: center;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); pointer-events: none;
+        }
+        .pokemon-cheer.left { left: 15px; }
+        .pokemon-cheer.right { right: 15px; }
+        
+        .poke-avatar-img {
+            width: 100px; height: 100px; object-fit: contain;
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.2));
+            animation: pokeBounce 2.5s infinite ease-in-out;
+        }
+        @keyframes pokeBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-14px) rotate(4deg); }
+        }
+
+        .poke-speech-bubble {
+            background: white; border: 3px solid var(--poke-blue); border-radius: 15px;
+            padding: 8px 12px; font-size: 0.85rem; font-weight: bold; color: var(--poke-dark-blue);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15); margin-bottom: 8px; opacity: 0; transform: scale(0.8);
+            transition: all 0.3s ease; white-space: nowrap; max-width: 160px; text-align: center;
+        }
+        .poke-speech-bubble.show { opacity: 1; transform: scale(1); }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6); z-index: 200; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+        .modal-card {
+            background: white; border-radius: 25px; width: 90%; max-width: 580px; max-height: 85vh;
+            padding: 25px; border: 5px solid var(--poke-yellow); box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow-y: auto; text-align: left;
+        }
+        .modal-title { font-size: 1.8rem; color: var(--poke-blue); text-align: center; margin-bottom: 15px; font-weight: bold; }
+        .report-section { margin-bottom: 15px; }
+        .report-section h3 { font-size: 1.15rem; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #E2E8F0; }
+        .report-list { list-style: none; padding: 0; margin: 0; }
+        .report-item { padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; }
+        .report-item.perfect { background-color: #DCFCE7; color: #166534; border-left: 5px solid #22C55E; }
+        .report-item.good { background-color: #FEF3C7; color: #92400E; border-left: 5px solid #F59E0B; }
+        .report-item.wrong { background-color: #FEE2E2; color: #991B1B; border-left: 5px solid #EF4444; }
+        
+        .report-main-info { display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+        .report-encourage { font-size: 0.85rem; font-weight: bold; padding-top: 2px; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--poke-dark-blue); }
+        .form-control { width: 100%; padding: 8px 12px; border-radius: 10px; border: 2px solid #CBD5E1; font-size: 0.95rem; }
+        textarea.form-control { height: 120px; resize: vertical; }
+
+        .delete-list { list-style: none; padding: 0; margin: 8px 0; border: 1px solid #E2E8F0; border-radius: 12px; max-height: 140px; overflow-y: auto; }
+        .delete-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #F1F5F9; }
+        .delete-item:last-child { border-bottom: none; }
+        .del-btn { background: var(--poke-red); color: white; border: none; border-radius: 8px; padding: 4px 10px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
+        .del-btn:hover { background: #990000; }
+
+        .celebration-screen { padding-top: 40px; }
+        .celebration-icon { font-size: 5rem; animation: bounce 1s infinite; margin-bottom: 15px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        
+        .confetti {
+            position: fixed; width: 10px; height: 10px; background-color: #f00; 
+            animation: fall linear forwards; top: -10px; z-index: 100;
+        }
+        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); } }
+
+        @media (max-width: 900px) {
+            .pokemon-cheer { display: none; }
+            .game-layout { grid-template-columns: 1fr; }
+            .image-container { height: 230px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 兩側皮卡丘與可達鴨真實圖案打氣元件 -->
+    <div class="pokemon-cheer left">
+        <div class="poke-speech-bubble" id="poke-bubble-left">Pika Pika! 加油喔！⚡</div>
+        <img class="poke-avatar-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" alt="皮卡丘 Pikachu">
+    </div>
+    <div class="pokemon-cheer right">
+        <div class="poke-speech-bubble" id="poke-bubble-right">可達！衝呀！🔥</div>
+        <img class="poke-avatar-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/54.png" alt="可達鴨 Psyduck">
+    </div>
+
+    <input type="text" id="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+    <!-- ================= 畫面結構 ================= -->
+    <div id="home-screen" class="screen active">
+        <h1>⚡ 魔法拼字小學堂 ⚡</h1>
+        <div class="nav-instruction">👉 請點擊下方按鈕選擇學習單元 👈</div>
+        <div id="unit-list-home" class="top-nav"></div>
+        <div style="margin-top: 10px;">
+            <button class="nav-btn upload-btn" onclick="openUploadModal()">📤 上傳 / 管理自訂生字與填空單元</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="nav-instruction">👉 請點擊下方按鈕選擇學習單元 👈</div>
+        <div id="unit-list-game" class="top-nav"></div>
+        
+        <div class="count-nav">
+            <span style="font-weight:bold; color:var(--poke-dark-blue); font-size:0.9rem;">🎯 選擇挑戰題目數：</span>
+            <button class="count-btn active" onclick="setWordLimit(5, event)">5 個 (預設)</button>
+            <button class="count-btn" onclick="setWordLimit(10, event)">10 個</button>
+            <button class="count-btn" onclick="setWordLimit(15, event)">15 個</button>
+            <button class="count-btn" onclick="setWordLimit(20, event)">20 個</button>
+            <button class="count-btn" onclick="setWordLimit(0, event)">全部題目</button>
+        </div>
+
+        <div class="game-layout">
+            <div class="left-panel">
+                <div class="image-container" id="word-image">
+                    <span>圖片載入中...</span>
+                </div>
+                <div class="chinese-meaning" id="chinese-display"></div>
+                <!-- 填空練習句型與漸進提示區域 -->
+                <div class="sentence-box" id="sentence-display" style="display: none;"></div>
+            </div>
+
+            <div class="right-panel">
+                <div class="course-title" id="course-title">目前挑戰：Unit 1</div>
+                
+                <div class="status-bar">
+                    <div class="score-display">⭐ 得分: <span id="score-text">0</span> / 100</div>
+                    <div class="lives-display" id="lives-text">❤️❤️❤️</div>
+                </div>
+                
+                <div id="progress-text" style="color: #666; font-weight: bold;"></div>
+                
+                <div class="controls">
+                    <button class="icon-btn" id="btn-speak" title="聽發音">🔊</button>
+                    <div class="speed-badge" id="btn-speed-toggle" title="切換朗讀速度">🐢 極慢 (0.55x)</div>
+                    <button class="icon-btn" id="btn-mic" title="語音答題 (支援分段唸出字母)">🎙️</button>
+                    <button class="icon-btn" id="btn-hint" title="求救提示 (有心時扣心不記失誤，無心時記入失誤)">💡</button>
+                </div>
+
+                <div class="speech-panel" id="speech-panel">
+                    <div class="speech-timer">⏱️ 錄音時間：<span id="speech-timer-text">00:00</span></div>
+                    <div style="font-size:0.85rem; color:#4B5563; font-weight:bold;">🎙️ 正在聆聽中...已讀出的字母（可分段唸）：</div>
+                    <div class="spoken-bubbles-container" id="spoken-bubbles-container"></div>
+                    <button class="stop-speech-btn" onclick="stopListening()">🛑 結束本次語音輸入</button>
+                </div>
+
+                <div class="word-display" id="word-display" title="點擊此處輸入字母"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen celebration-screen">
+        <div class="celebration-icon">🏆</div>
+        <h1 style="font-size: 2.2rem; color: var(--poke-blue);">太棒了！冒險完成！</h1>
+        <p style="font-size: 1.2rem; color: #4A5568;">獲得總分：<span id="final-score" style="font-weight:bold; color:#D97706;">0</span> 分！</p>
+        
+        <div style="display:flex; justify-content:center; gap:15px; margin-top:25px;">
+            <button class="nav-btn" style="background-color:var(--poke-blue); color:white;" onclick="openReportModal()">📋 查看學習成績單</button>
+            <button class="nav-btn" onclick="returnToHome()">回到首頁</button>
+        </div>
+    </div>
+
+    <!-- 成績單 Modal -->
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal-card">
+            <div class="modal-title">📊 學習成績單</div>
+            <div class="report-section">
+                <h3 style="color:#166534;">🌟 完美掌握的生字/填空 (0 次按錯)：</h3>
+                <ul class="report-list" id="report-perfect-list"></ul>
+            </div>
+            <div class="report-section">
+                <h3 style="color:#92400E;">✨ 良好掌握的生字/填空 (僅按錯 1 次)：</h3>
+                <ul class="report-list" id="report-good-list"></ul>
+            </div>
+            <div class="report-section">
+                <h3 style="color:#991B1B;">⚠️ 需要加強與特訓的生字/填空 (按錯 2 次及以上)：</h3>
+                <ul class="report-list" id="report-wrong-list"></ul>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <button class="nav-btn" onclick="closeReportModal()">關閉成績單</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自訂生字/填空上傳與手動刪除 Modal -->
+    <div class="modal-overlay" id="upload-modal">
+        <div class="modal-card">
+            <div class="modal-title">📤 建立 / 管理自訂單元</div>
+            
+            <div class="form-group">
+                <label>1. 單元名稱 (例如 p6a_unit1_fillblank 會自動搜尋 mygame/p6a_unit1_fillblank/ 資料夾圖片)：</label>
+                <input type="text" id="custom-unit-name" class="form-control" placeholder="例如：p6a_unit1_fillblank 或 P5B_unit1">
+            </div>
+
+            <div class="form-group">
+                <label>2. 選擇 CSV 檔案 (直接支援 Gemini 表格與帶編號 CSV)：</label>
+                <input type="file" id="csv-file-input" accept=".csv, .txt" class="form-control" onchange="handleCsvSelect(event)">
+            </div>
+
+            <div class="form-group">
+                <label>3. 或直接貼入文本 / Markdown 表格內容：</label>
+                <textarea id="custom-text-input" class="form-control" placeholder="可以直接將 Gemini 給你的表格完整貼在這裡喔！"></textarea>
+            </div>
+
+            <div style="text-align:center; margin-top:15px;">
+                <button class="nav-btn upload-btn" onclick="processCustomWords()">🚀 匯入單元並開始練習</button>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 2px dashed #E2E8F0;">
+
+            <div class="form-group">
+                <label style="color: var(--poke-red);">🗑️ 已建立的自訂單元 (可一鍵刪除字庫與按鈕)：</label>
+                <ul class="delete-list" id="custom-units-delete-list"></ul>
+            </div>
+
+            <div style="text-align:center; margin-top:15px;">
+                <button class="nav-btn" style="background-color:#94A3B8; color:white; border-color:#64748B; box-shadow:0 4px 0px #64748B;" onclick="closeUploadModal()">關閉視窗</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 核心邏輯 ================= -->
+    <script>
+        function getSvg(emoji) { return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='70' font-size='60' text-anchor='middle'>${emoji}</text></svg>`; }
+
+        /** 
+         * 預設內建資料庫 (僅留 Unit 1 & Unit 2)
+         */
+        let defaultGameData = {
+            "Unit 1: A helping hand": [
+                { word: "adopt a pet", chinese: "領養寵物", imageUrl: "unit1/adopt a pet.jpg" },
+                { word: "be a volunteer", chinese: "做義工", imageUrl: "unit1/be a volunteer.jpg" },
+                { word: "buy sell flags", chinese: "買旗 / 賣旗", imageUrl: "unit1/buy sell flags.jpg" },
+                { word: "buy sell raffle tickets", chinese: "買 / 賣獎券", imageUrl: "unit1/buy sell raffle tickets.jpg" },
+                { word: "do voluntary work", chinese: "參與義務工作", imageUrl: "unit1/do voluntary work.jpg" },
+                { word: "donate money", chinese: "捐款", imageUrl: "unit1/donate money.jpg" },
+                { word: "give away old books", chinese: "捐贈舊書", imageUrl: "unit1/give away old books.jpg" },
+                { word: "go on a walkathon", chinese: "參加慈善步行", imageUrl: "unit1/go on a walkathon.jpg" },
+                { word: "take part in a fund-raising fair", chinese: "參加籌款嘉年華", imageUrl: "unit1/take part in a fund-raising fair.jpg" },
+                { word: "visit an elderly home", chinese: "探訪安老院", imageUrl: "unit1/visit an elderly home.jpg" },
+                { word: "exciting", chinese: "使人興奮的", imageUrl: "unit1/exciting.jpg" },
+                { word: "invitations", chinese: "邀請", imageUrl: "unit1/invitations.jpg" },
+                { word: "animal charity", chinese: "動物收容所", imageUrl: "unit1/animal charity.jpg" },
+                { word: "recently", chinese: "最近", imageUrl: "unit1/recently.jpg" },
+                { word: "special", chinese: "特別的", imageUrl: "unit1/special.jpg" },
+                { word: "save animals", chinese: "拯救動物", imageUrl: "unit1/save animals.jpg" },
+                { word: "prepare", chinese: "預備", imageUrl: "unit1/prepare.jpg" },
+                { word: "meal", chinese: "膳食", imageUrl: "unit1/meal.jpg" },
+                { word: "the homeless", chinese: "無家可歸者", imageUrl: "unit1/the homeless.jpg" },
+                { word: "get into trouble", chinese: "惹上麻煩", imageUrl: "unit1/get into trouble.jpg" },
+                { word: "by the way", chinese: "順便一提", imageUrl: "unit1/by the way.jpg" },
+                { word: "sign up", chinese: "報名參加", imageUrl: "unit1/sign up.jpg" },
+                { word: "Society for the Blind", chinese: "盲人輔導會", imageUrl: "unit1/Society for the Blind.jpg" },
+                { word: "special care", chinese: "特別護理", imageUrl: "unit1/special care.jpg" },
+                { word: "training", chinese: "訓練", imageUrl: "unit1/training.jpg" },
+                { word: "general idea", chinese: "概念", imageUrl: "unit1/general idea.jpg" },
+                { word: "greedy", chinese: "貪婪的", imageUrl: "unit1/greedy.jpg" },
+                { word: "hiking", chinese: "遠足", imageUrl: "unit1/hiking.jpg" },
+                { word: "hospital", chinese: "醫院", imageUrl: "unit1/hospital.jpg" },
+                { word: "take care of", chinese: "照顧", imageUrl: "unit1/take care of.jpg" }
+            ],
+            "Unit 2: We support WeHelp": [
+                { word: "drought", chinese: "乾旱", imageUrl: "unit2/drought.jpg" },
+                { word: "earthquake", chinese: "地震", imageUrl: "unit2/earthquake.jpg" },
+                { word: "flood", chinese: "水災", imageUrl: "unit2/flood.jpg" },
+                { word: "landslip", chinese: "山泥傾瀉", imageUrl: "unit2/landslip.jpg" },
+                { word: "typhoon", chinese: "颱風", imageUrl: "unit2/typhoon.jpg" },
+                { word: "block roads", chinese: "堵塞道路", imageUrl: "unit2/block roads.jpg" },
+                { word: "break windows", chinese: "打破窗玻璃", imageUrl: "unit2/break windows.jpg" },
+                { word: "damage crops", chinese: "破壞農作物", imageUrl: "unit2/damage crops.jpg" },
+                { word: "destroy buildings", chinese: "摧毀樓房", imageUrl: "unit2/destroy buildings.jpg" },
+                { word: "injure people", chinese: "使人受傷", imageUrl: "unit2/injure people.jpg" },
+                { word: "natural disasters", chinese: "自然災害", imageUrl: "unit2/natural disasters.jpg" },
+                { word: "injured", chinese: "受傷的", imageUrl: "unit2/injured.jpg" },
+                { word: "flooded area", chinese: "水浸區域", imageUrl: "unit2/flooded area.jpg" },
+                { word: "helicopter", chinese: "直升機", imageUrl: "unit2/helicopter.jpg" },
+                { word: "supplies", chinese: "補給物", imageUrl: "unit2/supplies.jpg" },
+                { word: "advertisement", chinese: "廣告", imageUrl: "unit2/advertisement.jpg" },
+                { word: "imagine", chinese: "想像", imageUrl: "unit2/imagine.jpg" },
+                { word: "situation", chinese: "處境", imageUrl: "unit2/situation.jpg" },
+                { word: "pollute", chinese: "污染", imageUrl: "unit2/pollute.jpg" },
+                { word: "victim", chinese: "災民", imageUrl: "unit2/victim.jpg" },
+                { word: "escape", chinese: "逃離", imageUrl: "unit2/escape.jpg" },
+                { word: "provide", chinese: "提供", imageUrl: "unit2/provide.jpg" },
+                { word: "shelter", chinese: "庇護處", imageUrl: "unit2/shelter.jpg" },
+                { word: "destroyed", chinese: "受破壞的", imageUrl: "unit2/destroyed.jpg" },
+                { word: "tent", chinese: "帳篷", imageUrl: "unit2/tent.jpg" },
+                { word: "rebuild", chinese: "重建", imageUrl: "unit2/rebuild.jpg" },
+                { word: "equipment", chinese: "設備", imageUrl: "unit2/equipment.jpg" },
+                { word: "cause", chinese: "引起", imageUrl: "unit2/cause.jpg" },
+                { word: "terrible", chinese: "可怕的", imageUrl: "unit2/terrible.jpg" },
+                { word: "possible", chinese: "可能", imageUrl: "unit2/possible.jpg" },
+                { word: "traffic jam", chinese: "交通擠塞", imageUrl: "unit2/traffic jam.jpg" },
+                { word: "occur", chinese: "發生", imageUrl: "unit2/occur.jpg" },
+                { word: "first aid kit", chinese: "急救箱", imageUrl: "unit2/first aid kit.jpg" },
+                { word: "torch", chinese: "電筒", imageUrl: "unit2/torch.jpg" },
+                { word: "newsletter", chinese: "內部通訊", imageUrl: "unit2/newsletter.jpg" },
+                { word: "digital", chinese: "數碼的", imageUrl: "unit2/digital.jpg" },
+                { word: "organization", chinese: "組織", imageUrl: "unit2/organization.jpg" },
+                { word: "issue", chinese: "期號", imageUrl: "unit2/issue.jpg" },
+                { word: "heading", chinese: "標題", imageUrl: "unit2/heading.jpg" },
+                { word: "subheading", chinese: "子標題", imageUrl: "unit2/subheading.jpg" },
+                { word: "suffer", chinese: "遭受", imageUrl: "unit2/suffer.jpg" },
+                { word: "serious", chinese: "嚴重的", imageUrl: "unit2/serious.jpg" },
+                { word: "homeless", chinese: "無家可歸的", imageUrl: "unit2/homeless.jpg" },
+                { word: "villager", chinese: "村民", imageUrl: "unit2/villager.jpg" },
+                { word: "recruit", chinese: "招募", imageUrl: "unit2/recruit.jpg" },
+                { word: "medicine", chinese: "藥物", imageUrl: "unit2/medicine.jpg" },
+                { word: "blanket", chinese: "毛毯", imageUrl: "unit2/blanket.jpg" }
+,
+            "p6a_unit2_fillblank": [
+                {
+                                "word": "drought",
+                                "sentence": "If there is no rain for a long time it will cause a _____.",
+                                "chinese": "乾旱",
+                                "hint2": "n. (d______)",
+                                "imageUrl": "p6a_unit2_fillblank/drought.jpg"
+                },
+                {
+                                "word": "earthquake",
+                                "sentence": "There was an _____ in Japan yesterday and some buildings collapsed.",
+                                "chinese": "地震",
+                                "hint2": "n. (e_________)",
+                                "imageUrl": "p6a_unit2_fillblank/earthquake.jpg"
+                },
+                {
+                                "word": "flood",
+                                "sentence": "The heavy rain has caused a _____.",
+                                "chinese": "水災",
+                                "hint2": "n. (f____)",
+                                "imageUrl": "p6a_unit2_fillblank/flood.jpg"
+                },
+                {
+                                "word": "landslip",
+                                "sentence": "There was a _____ after the heavy rain.",
+                                "chinese": "山泥傾瀉",
+                                "hint2": "n. (l_______)",
+                                "imageUrl": "p6a_unit2_fillblank/landslip.jpg"
+                },
+                {
+                                "word": "typhoon",
+                                "sentence": "If there is a _____, there will be heavy rain and strong wind. We should stay indoors.",
+                                "chinese": "颱風",
+                                "hint2": "n. (t______)",
+                                "imageUrl": "p6a_unit2_fillblank/typhoon.jpg"
+                },
+                {
+                                "word": "block roads",
+                                "sentence": "The rocks _____ and we cannot go home.",
+                                "chinese": "堵塞道路",
+                                "hint2": "v. phr. (b____ r____)",
+                                "imageUrl": "p6a_unit2_fillblank/block roads.jpg"
+                },
+                {
+                                "word": "break windows",
+                                "sentence": "When there is a typhoon, the strong wind may _____.",
+                                "chinese": "打破窗玻璃",
+                                "hint2": "v. phr. (b____ w______)",
+                                "imageUrl": "p6a_unit2_fillblank/break windows.jpg"
+                },
+                {
+                                "word": "damaged the crops",
+                                "sentence": "The flood has _____. People do not have enough food to eat.",
+                                "chinese": "破壞農作物",
+                                "hint2": "v. phr. (d______ t__ c____)",
+                                "imageUrl": "p6a_unit2_fillblank/damaged the crops.jpg"
+                },
+                {
+                                "word": "destroyed many buildings",
+                                "sentence": "The strong typhoon has _____. Some people have nowhere to stay.",
+                                "chinese": "摧毀許多樓房",
+                                "hint2": "v. phr. (d________ m___ b________)",
+                                "imageUrl": "p6a_unit2_fillblank/destroyed many buildings.jpg"
+                },
+                {
+                                "word": "injured many people",
+                                "sentence": "The strong typhoon has _____. The victims are now in the hospital.",
+                                "chinese": "使許多人受傷",
+                                "hint2": "v. phr. (i______ m___ p_____)",
+                                "imageUrl": "p6a_unit2_fillblank/injured many people.jpg"
+                }
+],
+            "p6a_unit3_fillblank": [
+                {
+                                "word": "baked",
+                                "sentence": "Mum _____ a cake with an oven.",
+                                "chinese": "烘烤",
+                                "hint2": "(v.) b _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/baked.jpg"
+                },
+                {
+                                "word": "beat",
+                                "sentence": "Mum _____ the eggs to make some dessert.",
+                                "chinese": "打 / 攪打",
+                                "hint2": "(v.) b _ _ t",
+                                "imageUrl": "p6a_unit3_fillblank/beat.jpg"
+                },
+                {
+                                "word": "boil",
+                                "sentence": "I _____ some water to make coffee every morning.",
+                                "chinese": "煮沸",
+                                "hint2": "(v.) b _ _ l",
+                                "imageUrl": "p6a_unit3_fillblank/boil.jpg"
+                },
+                {
+                                "word": "chopped",
+                                "sentence": "Dad _____ the meat into pieces with a knife.",
+                                "chinese": "切碎",
+                                "hint2": "(v.) c _ _ _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/chopped.jpg"
+                },
+                {
+                                "word": "fried",
+                                "sentence": "My sister _____ the vegetables with some oil.",
+                                "chinese": "煎 / 炒",
+                                "hint2": "(v.) f _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/fried.jpg"
+                },
+                {
+                                "word": "mix",
+                                "sentence": "If we _____ blue and yellow, we get green.",
+                                "chinese": "混合",
+                                "hint2": "(v.) m _ x",
+                                "imageUrl": "p6a_unit3_fillblank/mix.jpg"
+                },
+                {
+                                "word": "poured",
+                                "sentence": "I _____ a cup of tea for my grandmother.",
+                                "chinese": "倒 / 倒出",
+                                "hint2": "(v.) p _ _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/poured.jpg"
+                },
+                {
+                                "word": "spread",
+                                "sentence": "I _____ some jam and butter on my toast.",
+                                "chinese": "塗抹",
+                                "hint2": "(v.) s _ _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/spread.jpg"
+                },
+                {
+                                "word": "sprinkled",
+                                "sentence": "I _____ some salt on my pasta.",
+                                "chinese": "灑 / 撒上",
+                                "hint2": "(v.) s _ _ _ _ _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/sprinkled.jpg"
+                },
+                {
+                                "word": "stirred",
+                                "sentence": "I put some sugar into my coffee and _____ it.",
+                                "chinese": "攪拌",
+                                "hint2": "(v.) s _ _ _ _ _ d",
+                                "imageUrl": "p6a_unit3_fillblank/stirred.jpg"
+                }
+]
+            ]
+        };
+
+        let rawGameData = { ...defaultGameData };
+
+        function loadCustomUnitsFromStorage() {
+            rawGameData = { ...defaultGameData };
+            try {
+                const saved = localStorage.getItem('magicSpellingCustomUnits');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(rawGameData, parsed);
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        // 隨機洗牌演算法 (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        let currentUnitKey = "";
+        let sessionWordList = []; 
+        let currentWordList = [];
+        let currentWordIndex = 0;
+        let targetLettersOnly = ""; 
+        let currentTyped = "";
+        let isProcessing = false;
+        let consecutiveSpeechErrors = 0; 
+        
+        let wordLimit = 5;
+
+        const speeds = [
+            { rate: 0.55, label: "🐢 極慢 (0.55x)" },
+            { rate: 0.75, label: "🚗 慢速 (0.75x)" },
+            { rate: 0.95, label: "⚡ 中速 (0.95x)" },
+            { rate: 1.1,  label: "🚀 正常 (1.10x)" }
+        ];
+        let currentSpeedIndex = 0; 
+
+        let score = 0;
+        let pointsPerWord = 0;
+        const maxMistakes = 3;
+        let currentMistakes = 0; 
+        let wordMistakeTracker = {}; 
+        
+        let remedialQueue = [];
+        let isRemedialMode = false;
+
+        const screens = { home: document.getElementById('home-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
+        const domElements = {
+            wordDisplay: document.getElementById('word-display'), chineseDisplay: document.getElementById('chinese-display'),
+            sentenceDisplay: document.getElementById('sentence-display'),
+            wordImage: document.getElementById('word-image'), progressText: document.getElementById('progress-text'),
+            scoreText: document.getElementById('score-text'), livesText: document.getElementById('lives-text'),
+            courseTitle: document.getElementById('course-title'), finalScore: document.getElementById('final-score'),
+            mobileInput: document.getElementById('mobile-input'),
+            reportModal: document.getElementById('report-modal'),
+            uploadModal: document.getElementById('upload-modal'),
+            reportPerfectList: document.getElementById('report-perfect-list'),
+            reportGoodList: document.getElementById('report-good-list'),
+            reportWrongList: document.getElementById('report-wrong-list'),
+            btnSpeedToggle: document.getElementById('btn-speed-toggle'),
+            btnMic: document.getElementById('btn-mic'),
+            customUnitsDeleteList: document.getElementById('custom-units-delete-list'),
+            speechPanel: document.getElementById('speech-panel'),
+            speechTimerText: document.getElementById('speech-timer-text'),
+            spokenBubblesContainer: document.getElementById('spoken-bubbles-container'),
+            pokeBubbleLeft: document.getElementById('poke-bubble-left'),
+            pokeBubbleRight: document.getElementById('poke-bubble-right')
+        };
+
+        // ================= 寶可夢打氣對話框邏輯 =================
+        const cheerQuotesLeft = ["Pika Pika! 你太棒了！⚡", "皮卡丘為你加油！✨", "相信自己！你可以的！💪", "太厲害了，繼續衝刺！🚀"];
+        const cheerQuotesRight = ["可達鴨讚賞你！🦆", "衝呀！勝利就在眼前！🔥", "好棒的拼讀技巧！🌟", "再答對一題就太神了！🏆"];
+        
+        function triggerPokemonCheer(customText = null) {
+            const leftMsg = customText || cheerQuotesLeft[Math.floor(Math.random() * cheerQuotesLeft.length)];
+            const rightMsg = cheerQuotesRight[Math.floor(Math.random() * cheerQuotesRight.length)];
+            
+            domElements.pokeBubbleLeft.textContent = leftMsg;
+            domElements.pokeBubbleRight.textContent = rightMsg;
+            
+            domElements.pokeBubbleLeft.classList.add('show');
+            domElements.pokeBubbleRight.classList.add('show');
+            
+            setTimeout(() => {
+                domElements.pokeBubbleLeft.classList.remove('show');
+                domElements.pokeBubbleRight.classList.remove('show');
+            }, 3500);
+        }
+
+        setInterval(() => {
+            if (screens.game.classList.contains('active')) {
+                triggerPokemonCheer();
+            }
+        }, 12000);
+
+        // ================= 音效系統 =================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            
+            if (type === 'error') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'success') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'victory') { 
+                osc.type = 'square';
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (i * 0.15));
+                });
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+            }
+        }
+
+        // ================= 語音合成 (英式英文 en-GB) =================
+        let ukFemaleVoice = null;
+        
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            
+            ukFemaleVoice = voices.find(v => (v.lang === 'en-GB' || v.lang.startsWith('en-GB')) && /female|hazel|victoria|fiona|kate|google uk/i.test(v.name))
+                         || voices.find(v => v.lang === 'en-GB' || v.lang.startsWith('en-GB'))
+                         || voices.find(v => v.lang.startsWith('en'));
+        }
+        
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+
+        let speakTimeouts = [];
+
+        function clearSpeechTimers() {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            speakTimeouts.forEach(t => clearTimeout(t));
+            speakTimeouts = [];
+        }
+
+        function cleanTextForSpeech(text) {
+            return text.replace(/[/\\_-]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        function speakUtterance(textToSpeak, onEndCallback = null) {
+            if (!('speechSynthesis' in window)) {
+                if (onEndCallback) onEndCallback();
+                return;
+            }
+            window.speechSynthesis.cancel(); 
+            
+            const cleanText = cleanTextForSpeech(textToSpeak);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            utterance.lang = 'en-GB'; 
+            utterance.rate = speeds[currentSpeedIndex].rate;
+            if (ukFemaleVoice) utterance.voice = ukFemaleVoice;
+            
+            if (onEndCallback) {
+                utterance.onend = onEndCallback;
+                utterance.onerror = onEndCallback;
+            }
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playAudioByMode(textToSpeak, isFillBlank = false) {
+            if (!('speechSynthesis' in window)) return;
+            clearSpeechTimers();
+
+            if (isFillBlank) {
+                speakUtterance(textToSpeak);
+            } else {
+                const times = 3;
+                const intervalDuration = 1500;
+                for (let i = 0; i < times; i++) {
+                    const timer = setTimeout(() => {
+                        speakUtterance(textToSpeak);
+                    }, i * (1200 + intervalDuration)); 
+                    speakTimeouts.push(timer);
+                }
+            }
+        }
+
+        function playAudioOnce(textToSpeak, onEndCallback = null) {
+            clearSpeechTimers();
+            speakUtterance(textToSpeak, onEndCallback);
+        }
+
+        // ================= 語音輸入辨識系統 =================
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isListening = false;
+        let speechTimerInterval = null;
+        let speechSeconds = 0;
+        let lastSpokenRaw = "";
+        let isReadingWholeWordDetected = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-GB'; 
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isListening = true;
+                isReadingWholeWordDetected = false;
+                domElements.btnMic.classList.add('recording');
+                domElements.speechPanel.classList.add('active');
+                domElements.spokenBubblesContainer.innerHTML = "";
+                lastSpokenRaw = "";
+                
+                speechSeconds = 0;
+                updateTimerDisplay();
+                clearInterval(speechTimerInterval);
+                speechTimerInterval = setInterval(() => {
+                    speechSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+            };
+
+            recognition.onresult = (event) => {
+                let spokenRaw = "";
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    spokenRaw += event.results[i][0].transcript;
+                }
+                spokenRaw = spokenRaw.toLowerCase().trim();
+                lastSpokenRaw = spokenRaw;
+
+                const words = spokenRaw.split(/\s+/).filter(w => w.length > 0);
+                let hasMultiLetterWord = false;
+
+                for (let w of words) {
+                    const cleanW = w.replace(/[^a-z]/g, '');
+                    if (cleanW.length > 1) {
+                        hasMultiLetterWord = true;
+                        break;
+                    }
+                }
+
+                domElements.spokenBubblesContainer.innerHTML = "";
+
+                if (hasMultiLetterWord) {
+                    isReadingWholeWordDetected = true;
+                    const warnMsg = document.createElement('div');
+                    warnMsg.style.color = '#EE1515';
+                    warnMsg.style.fontWeight = 'bold';
+                    warnMsg.style.fontSize = '0.9rem';
+                    warnMsg.textContent = '⚠️ 請一個一個讀出字母音名（例如：a - p - p - l - e），不需要讀出整個單字喔！';
+                    domElements.spokenBubblesContainer.appendChild(warnMsg);
+                } else {
+                    isReadingWholeWordDetected = false;
+                    const lettersArr = spokenRaw.replace(/[^a-z]/g, '').split('');
+                    lettersArr.forEach(char => {
+                        const bubble = document.createElement('div');
+                        bubble.className = 'spoken-bubble';
+                        bubble.textContent = char;
+                        domElements.spokenBubblesContainer.appendChild(bubble);
+                    });
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.log('Speech recognition error:', e.error);
+                stopListening();
+            };
+
+            recognition.onend = () => { stopListening(); };
+        } else {
+            domElements.btnMic.style.display = 'none';
+        }
+
+        function updateTimerDisplay() {
+            const m = String(Math.floor(speechSeconds / 60)).padStart(2, '0');
+            const s = String(speechSeconds % 60).padStart(2, '0');
+            domElements.speechTimerText.textContent = `${m}:${s}`;
+        }
+
+        function toggleSpeechRecognition() {
+            if (!recognition) {
+                alert("您的瀏覽器暫不支援語音輸入功能，請使用 Chrome 瀏覽器試試看！");
+                return;
+            }
+            if (isListening) {
+                stopListening();
+            } else {
+                try {
+                    clearSpeechTimers();
+                    recognition.start();
+                } catch(e) { console.log(e); }
+            }
+        }
+
+        function stopListening() {
+            if (!isListening) return;
+            isListening = false;
+            clearInterval(speechTimerInterval);
+            domElements.btnMic.classList.remove('recording');
+            domElements.speechPanel.classList.remove('active');
+
+            if (recognition) {
+                try { recognition.stop(); } catch(e){}
+            }
+
+            evaluateSpokenLetters(lastSpokenRaw);
+        }
+
+        function evaluateSpokenLetters(spokenRaw) {
+            const cleanSpoken = spokenRaw.replace(/[^a-z]/g, '');
+            if (!cleanSpoken && !isReadingWholeWordDetected) return;
+
+            if (isReadingWholeWordDetected) {
+                handleSpeechError("請一個一個讀出字母音名（例如：a - p - p - l - e），不要讀出整個單字喔！");
+                return;
+            }
+
+            const remainingTarget = targetLettersOnly.substring(currentTyped.length);
+            
+            if (remainingTarget.startsWith(cleanSpoken)) {
+                consecutiveSpeechErrors = 0;
+                for (let i = 0; i < cleanSpoken.length; i++) {
+                    handleInput(cleanSpoken[i]);
+                }
+            } else {
+                handleSpeechError();
+            }
+        }
+
+        function handleSpeechError(customMsg = null) {
+            consecutiveSpeechErrors++;
+            playTone('error');
+
+            if (currentMistakes < maxMistakes) {
+                currentMistakes++;
+            }
+            recordMistake();
+            updateStatusUI();
+
+            const nextCharIndex = currentTyped.length;
+            const expectedChar = targetLettersOnly[nextCharIndex] || "";
+
+            if (customMsg) {
+                alert(customMsg);
+            } else if (consecutiveSpeechErrors >= 2 && expectedChar) {
+                alert(`💡 拼讀提示：第 ${nextCharIndex + 1} 個字母是 '${expectedChar}'。請讀出字母繼續完成！`);
+            } else {
+                alert("💡 沒關係！請再讀一次接下來要輸入的字母喔！");
+            }
+
+            if (currentMistakes >= maxMistakes) { triggerSuperHint(); }
+        }
+
+        function setWordLimit(limit, evt) {
+            wordLimit = limit;
+            document.querySelectorAll('.count-btn').forEach(btn => btn.classList.remove('active'));
+            if (evt && evt.target) {
+                evt.target.classList.add('active');
+            }
+            
+            if (currentUnitKey) {
+                startGame(currentUnitKey);
+            }
+        }
+
+        // ================= 上傳與手動刪除自訂單元邏輯 =================
+        function openUploadModal() {
+            document.getElementById('custom-unit-name').value = "";
+            document.getElementById('custom-text-input').value = "";
+            document.getElementById('csv-file-input').value = "";
+            renderDeleteList();
+            domElements.uploadModal.classList.add('active');
+        }
+
+        function closeUploadModal() {
+            domElements.uploadModal.classList.remove('active');
+        }
+
+        function renderDeleteList() {
+            domElements.customUnitsDeleteList.innerHTML = "";
+            const defaultKeys = Object.keys(defaultGameData);
+            const customKeys = Object.keys(rawGameData).filter(k => !defaultKeys.includes(k));
+
+            if (customKeys.length === 0) {
+                domElements.customUnitsDeleteList.innerHTML = "<li class='delete-item' style='color:#888;'>目前沒有上傳的自訂單元。</li>";
+                return;
+            }
+
+            customKeys.forEach(unitKey => {
+                const li = document.createElement('li');
+                li.className = 'delete-item';
+                li.innerHTML = `
+                    <span><strong>${unitKey}</strong> (${rawGameData[unitKey].length} 個單字)</span>
+                    <button class="del-btn" onclick="deleteCustomUnit('${unitKey}')">🗑️ 刪除</button>
+                `;
+                domElements.customUnitsDeleteList.appendChild(li);
+            });
+        }
+
+        function deleteCustomUnit(unitKey) {
+            if (confirm(`確定要刪除自訂單元「${unitKey}」及其所有字庫嗎？刪除後無法復原喔！`)) {
+                delete rawGameData[unitKey];
+
+                try {
+                    const saved = JSON.parse(localStorage.getItem('magicSpellingCustomUnits') || '{}');
+                    delete saved[unitKey];
+                    localStorage.setItem('magicSpellingCustomUnits', JSON.stringify(saved));
+                } catch(e) { console.log(e); }
+
+                renderDeleteList();
+                initHome();
+                alert(`已成功刪除單元「${unitKey}」及其字庫！`);
+            }
+        }
+
+        function handleCsvSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                const nameInput = document.getElementById('custom-unit-name');
+                if (!nameInput.value) {
+                    nameInput.value = fileNameWithoutExt;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let content = e.target.result;
+                    if (content.startsWith('\uFEFF')) { content = content.substring(1); }
+                    document.getElementById('custom-text-input').value = content;
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        }
+
+        function parseTextLine(line) {
+            line = line.trim();
+            if (line.includes('|')) {
+                let parts = line.split('|').map(p => p.trim());
+                if (parts[0] === '') parts.shift();
+                if (parts[parts.length - 1] === '') parts.pop();
+                return parts;
+            }
+            let parts = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                let c = line[i];
+                if (c === '"') { inQuotes = !inQuotes; }
+                else if ((c === ',' || c === '\t') && !inQuotes) {
+                    parts.push(cur.trim()); cur = '';
+                } else { cur += c; }
+            }
+            parts.push(cur.trim());
+            return parts.map(p => p.replace(/^"|"$/g, '').trim());
+        }
+
+        // 💡 標題列智慧映射解析器 (Header-Aware Mapping Engine)：精準抓取中文提示與填空目標
+        function processCustomWords() {
+            let unitName = document.getElementById('custom-unit-name').value.trim();
+            const rawText = document.getElementById('custom-text-input').value.trim();
+
+            if (!unitName) { unitName = `自訂單元 ${Object.keys(rawGameData).length + 1}`; }
+            if (!rawText) { alert("請貼入內容或上傳 CSV 檔案！"); return; }
+
+            let folderName = unitName.trim().replace(/\s+/g, '');
+            const lines = rawText.split('\n');
+            const parsedWords = [];
+
+            let headerLineIdx = -1;
+            let colMap = { sentence: -1, word: -1, chinese: -1, hint2: -1 };
+
+            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+                let line = lines[i].trim();
+                if (!line || line.startsWith('|-') || line.startsWith('---')) continue;
+                let parts = parseTextLine(line);
+                let lineStr = parts.join(' ').toLowerCase();
+
+                if (lineStr.includes('填空句') || lineStr.includes('目標生字') || lineStr.includes('sentence') || lineStr.includes('第一級')) {
+                    headerLineIdx = i;
+                    parts.forEach((p, idx) => {
+                        let pLow = p.toLowerCase();
+                        if (p.includes('填空句') || pLow.includes('sentence') || p.includes('例句')) {
+                            colMap.sentence = idx;
+                        } else if (p.includes('目標生字') || pLow.includes('target') || (p.includes('生字') && !p.includes('提示'))) {
+                            colMap.word = idx;
+                        } else if (p.includes('第一級') || p.includes('中文') || p.includes('翻譯') || pLow.includes('chinese') || pLow.includes('hint 1') || pLow.includes('hint1')) {
+                            colMap.chinese = idx;
+                        } else if (p.includes('第二級') || p.includes('語法') || p.includes('詞性') || pLow.includes('hint 2') || pLow.includes('hint2')) {
+                            colMap.hint2 = idx;
+                        }
+                    });
+                    break;
+                }
+            }
+
+            lines.forEach((line, lineIdx) => {
+                line = line.trim();
+                if (!line || line.startsWith('|-') || line.startsWith('---')) return;
+                if (lineIdx === headerLineIdx) return;
+
+                let parts = parseTextLine(line);
+                if (parts.length < 2) return;
+
+                let sentence = "";
+                let word = "";
+                let chinese = "";
+                let hint2 = "";
+
+                if (colMap.sentence !== -1 && colMap.word !== -1) {
+                    if (colMap.sentence < parts.length) sentence = parts[colMap.sentence];
+                    if (colMap.word < parts.length) word = parts[colMap.word];
+                    if (colMap.chinese !== -1 && colMap.chinese < parts.length) chinese = parts[colMap.chinese];
+                    if (colMap.hint2 !== -1 && colMap.hint2 < parts.length) hint2 = parts[colMap.hint2];
+                }
+
+                if (!word || (!sentence && parts.some(p => /_{2,}/.test(p)))) {
+                    let sentenceIdx = -1;
+                    parts.forEach((p, idx) => {
+                        if (sentenceIdx === -1 && /_{2,}/.test(p)) {
+                            sentenceIdx = idx;
+                            sentence = p;
+                        }
+                    });
+
+                    if (sentenceIdx !== -1) {
+                        parts.forEach((p, idx) => {
+                            if (idx === sentenceIdx || /^\d+$/.test(p)) return;
+
+                            if (!word && /[a-zA-Z]/.test(p) && !p.includes('v.') && !p.includes('n.') && !p.includes('adj.') && !p.includes('_____')) {
+                                word = p.replace(/\(.*?\)/g, '').trim();
+                            } else if (!chinese && /[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/.test(p)) {
+                                chinese = p;
+                            } else if (!hint2 && (p.includes('v.') || p.includes('n.') || p.includes('adj.') || p.includes('('))) {
+                                hint2 = p;
+                            }
+                        });
+                    } else {
+                        parts.forEach((p) => {
+                            if (/^\d+$/.test(p)) return;
+                            if (!word && /[a-zA-Z]/.test(p)) {
+                                word = p.replace(/\(.*?\)/g, '').trim();
+                            } else if (!chinese && /[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/.test(p)) {
+                                chinese = p;
+                            }
+                        });
+                    }
+                }
+
+                if (sentence) sentence = sentence.replace(/_{2,}/g, '_____');
+                if (word) word = word.replace(/\(.*?\)/g, '').trim();
+
+                if (word) {
+                    let autoImgUrl = `${folderName}/${word}.jpg`;
+                    parsedWords.push({
+                        word: word,
+                        sentence: sentence,
+                        chinese: chinese || "（未提供中文提示）",
+                        hint2: hint2,
+                        imageUrl: autoImgUrl
+                    });
+                }
+            });
+
+            if (parsedWords.length === 0) {
+                alert("未能解析出有效的內容！請確認貼入的文本或 CSV 包含英文生字或填空句子。");
+                return;
+            }
+
+            rawGameData[unitName] = parsedWords;
+
+            try {
+                const saved = JSON.parse(localStorage.getItem('magicSpellingCustomUnits') || '{}');
+                saved[unitName] = parsedWords;
+                localStorage.setItem('magicSpellingCustomUnits', JSON.stringify(saved));
+            } catch(e) { console.log(e); }
+
+            alert(`🎉 成功解析並匯入 ${parsedWords.length} 個題目！圖片將自動對應至【mygame/${folderName}/】資料夾。`);
+
+            initHome();
+            closeUploadModal();
+            initAudio();
+            startGame(unitName);
+        }
+
+        // ================= 遊戲核心 =================
+        function initHome() {
+            loadCustomUnitsFromStorage();
+            const listHome = document.getElementById('unit-list-home');
+            listHome.innerHTML = "";
+            
+            const listGame = document.getElementById('unit-list-game');
+            if (listGame) listGame.innerHTML = "";
+            
+            for (let unit in rawGameData) {
+                const btnH = document.createElement('button');
+                btnH.className = 'nav-btn'; btnH.textContent = unit;
+                btnH.onclick = () => { initAudio(); startGame(unit); };
+                listHome.appendChild(btnH);
+                
+                if (listGame) {
+                    const btnG = document.createElement('button');
+                    btnG.className = 'nav-btn'; btnG.id = `nav-${unit.replace(/[^a-zA-Z0-9]/g, '')}`; btnG.textContent = unit;
+                    btnG.onclick = () => { initAudio(); startGame(unit); };
+                    listGame.appendChild(btnG);
+                }
+            }
+        }
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function startGame(unit) {
+            currentUnitKey = unit; 
+            const fullList = shuffleArray(rawGameData[unit]);
+            
+            if (wordLimit > 0 && wordLimit < fullList.length) {
+                currentWordList = fullList.slice(0, wordLimit);
+            } else {
+                currentWordList = fullList;
+            }
+
+            sessionWordList = [...currentWordList];
+
+            currentWordIndex = 0; 
+            score = 0;
+            pointsPerWord = 100 / currentWordList.length; 
+            wordMistakeTracker = {}; 
+            remedialQueue = [];
+            isRemedialMode = false;
+
+            document.querySelectorAll('#unit-list-game .nav-btn').forEach(btn => btn.classList.remove('active'));
+            const safeNavId = `nav-${unit.replace(/[^a-zA-Z0-9]/g, '')}`;
+            const activeNavBtn = document.getElementById(safeNavId);
+            if (activeNavBtn) activeNavBtn.classList.add('active');
+            
+            domElements.courseTitle.textContent = `目前挑戰：${unit} (${currentWordList.length} 題模式)`; 
+            
+            showScreen('game'); loadWord();
+        }
+
+        function updateStatusUI() {
+            domElements.scoreText.textContent = Math.round(score);
+            let hearts = "";
+            for(let i=0; i<maxMistakes; i++) { hearts += (i < (maxMistakes - currentMistakes)) ? "❤️" : "🖤"; }
+            domElements.livesText.textContent = hearts;
+            
+            renderProgressiveHints();
+        }
+
+        function renderProgressiveHints() {
+            const currentData = currentWordList[currentWordIndex];
+            if (!currentData) return;
+
+            const isFillBlank = !!currentData.sentence;
+
+            if (isFillBlank) {
+                domElements.sentenceDisplay.style.display = "block";
+                const formattedSentence = currentData.sentence.replace("_____", "【 ______ 】");
+                
+                let htmlContent = `<div>${formattedSentence}</div>`;
+                
+                if (currentMistakes >= 4 && currentData.hint2) {
+                    htmlContent += `<div class="hint2-badge">💡 Lv.2 提示：${currentData.hint2}</div>`;
+                }
+                domElements.sentenceDisplay.innerHTML = htmlContent;
+
+                if (currentMistakes >= 3) {
+                    domElements.chineseDisplay.textContent = `💡 Lv.1 提示：${currentData.chinese}`;
+                } else {
+                    domElements.chineseDisplay.textContent = ""; 
+                }
+            } else {
+                domElements.sentenceDisplay.style.display = "none";
+                domElements.chineseDisplay.textContent = currentData.chinese;
+            }
+        }
+
+        function loadWord() {
+            isProcessing = false; currentTyped = ""; currentMistakes = 0; consecutiveSpeechErrors = 0;
+            if(isListening) stopListening();
+            
+            const currentData = currentWordList[currentWordIndex];
+            const modePrefix = isRemedialMode ? "🔥 [錯題特訓加分關] " : "";
+            domElements.progressText.textContent = `${modePrefix}第 ${currentWordIndex + 1} 題 / 共 ${currentWordList.length} 題`;
+
+            updateStatusUI(); 
+            
+            const fallbackSvg = getSvg("🖼️");
+            if(currentData.imageUrl) { 
+                domElements.wordImage.innerHTML = `<img src="${currentData.imageUrl}" alt="插圖" onerror="this.onerror=null; this.src='${fallbackSvg}';">`; 
+            }
+
+            domElements.wordDisplay.innerHTML = "";
+            targetLettersOnly = ""; let letterIndex = 0;
+            
+            // 💡 構建字母與符號對應框，精準將 word 中的字母收集到 targetLettersOnly
+            for (let i = 0; i < currentData.word.length; i++) {
+                const char = currentData.word[i];
+                const box = document.createElement('div');
+                if (/[a-zA-Z]/.test(char)) {
+                    box.className = 'letter-box'; box.id = `letter-${letterIndex}`;
+                    targetLettersOnly += char.toLowerCase(); letterIndex++;
+                } else {
+                    box.className = 'symbol-box'; box.textContent = char;
+                }
+                domElements.wordDisplay.appendChild(box);
+            }
+            
+            domElements.mobileInput.value = ""; domElements.mobileInput.focus();
+            
+            const isFillBlank = !!currentData.sentence;
+            const speechText = isFillBlank 
+                ? currentData.sentence.replace("_____", currentData.word) 
+                : currentData.word;
+
+            playAudioByMode(speechText, isFillBlank);
+        }
+
+        // 💡 核心修復：Super Hint 求救提示完全支援「填空練習」與「英文生字」雙模式！
+        function triggerSuperHint() {
+            if (isProcessing) return;
+
+            let isFromHintWithLives = false;
+
+            if (currentMistakes < maxMistakes) {
+                currentMistakes++;
+                isFromHintWithLives = true;
+                updateStatusUI();
+            }
+
+            const nextCharIndex = currentTyped.length;
+            const expectedChar = targetLettersOnly[nextCharIndex];
+
+            if (!expectedChar) return;
+
+            const targetBox = document.getElementById(`letter-${nextCharIndex}`);
+            if (targetBox) {
+                targetBox.classList.add('hinting');
+                setTimeout(() => {
+                    if (!isProcessing && targetBox.classList.contains('hinting')) {
+                        handleInput(expectedChar, isFromHintWithLives);
+                    }
+                }, 800);
+            }
+        }
+
+        function handleInput(char, isFromHintWithLives = false) {
+            if (isProcessing) return; 
+            char = char.toLowerCase(); 
+            const targetChar = targetLettersOnly[currentTyped.length];
+            const targetBox = document.getElementById(`letter-${currentTyped.length}`);
+
+            if (char === targetChar) {
+                if (targetBox) {
+                    targetBox.textContent = char; 
+                    targetBox.classList.remove('hinting');
+                    targetBox.classList.add('correct-pop');
+                }
+                
+                currentTyped += char;
+
+                if (!isFromHintWithLives && char !== targetChar) {
+                    recordMistake();
+                }
+
+                if (currentTyped.length === targetLettersOnly.length) {
+                    handleWordComplete();
+                }
+            } else {
+                playTone('error'); 
+                currentMistakes++; 
+                recordMistake();
+                updateStatusUI(); 
+                
+                if (currentMistakes >= maxMistakes) { triggerSuperHint(); }
+            }
+        }
+
+        function recordMistake() {
+            const currentObj = currentWordList[currentWordIndex];
+            const word = currentObj.word;
+            wordMistakeTracker[word] = (wordMistakeTracker[word] || 0) + 1;
+
+            if (wordMistakeTracker[word] >= 3) {
+                if (!remedialQueue.some(item => item.word === word)) {
+                    remedialQueue.push(currentObj);
+                }
+            }
+        }
+
+        function handleWordComplete() {
+            isProcessing = true; 
+            clearSpeechTimers();
+            if(isListening) stopListening();
+            
+            const currentObj = currentWordList[currentWordIndex];
+            const word = currentObj.word;
+            const mistakes = wordMistakeTracker[word] || 0;
+
+            if (isRemedialMode) {
+                score += 10;
+                triggerPokemonCheer("🔥 錯題特訓成功！得分加 10 分！");
+            } else {
+                if (mistakes >= 5) {
+                    score += (pointsPerWord * 0.5);
+                    triggerPokemonCheer("💪 堅持就是勝利！獲得 50% 分數！");
+                } else {
+                    score += pointsPerWord;
+                    triggerPokemonCheer("⚡ 太棒了！完美擊破！");
+                }
+            }
+
+            updateStatusUI();
+            playTone('success'); 
+
+            let hasProceeded = false;
+            const nextStep = () => {
+                if (hasProceeded) return;
+                hasProceeded = true;
+                
+                currentWordIndex++;
+                if (currentWordIndex < currentWordList.length) {
+                    loadWord();
+                } else {
+                    if (!isRemedialMode && remedialQueue.length > 0) {
+                        alert(`💪 太棒了！主要挑戰完成！接下來進入【錯題特訓加分關】，共有 ${remedialQueue.length} 個題目，每攻克一個可再額外加 10 分喔！衝呀！`);
+                        isRemedialMode = true;
+                        currentWordList = shuffleArray(remedialQueue);
+                        currentWordIndex = 0;
+                        loadWord();
+                    } else {
+                        handleUnitComplete();
+                    }
+                }
+            };
+
+            const speechText = currentObj.sentence 
+                ? currentObj.sentence.replace("_____", currentObj.word) 
+                : currentObj.word;
+
+            playAudioOnce(speechText, () => {
+                setTimeout(nextStep, 1000);
+            });
+
+            setTimeout(nextStep, 8000);
+        }
+
+        function createConfetti() {
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                conf.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 3000);
+            }
+        }
+
+        function handleUnitComplete() {
+            clearSpeechTimers();
+            const finalScoreVal = Math.round(score);
+            domElements.finalScore.textContent = finalScoreVal;
+            playTone('victory'); 
+            playAudioOnce("Excellent! Unit completed!");
+            showScreen('result'); 
+            createConfetti();
+        }
+
+        // ================= 成績單 Modal =================
+        function openReportModal() {
+            domElements.reportPerfectList.innerHTML = "";
+            domElements.reportGoodList.innerHTML = "";
+            domElements.reportWrongList.innerHTML = "";
+
+            sessionWordList.forEach(item => {
+                const mistakes = wordMistakeTracker[item.word] || 0;
+                const li = document.createElement('li');
+
+                if (mistakes === 0) {
+                    li.className = 'report-item perfect';
+                    li.innerHTML = `
+                        <div class="report-main-info">
+                            <span><strong>${item.word}</strong> (${item.chinese})</span>
+                            <span>🌟 完美掌握</span>
+                        </div>`;
+                    domElements.reportPerfectList.appendChild(li);
+                } else if (mistakes === 1) {
+                    li.className = 'report-item good';
+                    li.innerHTML = `
+                        <div class="report-main-info">
+                            <span><strong>${item.word}</strong> (${item.chinese})</span>
+                            <span>✨ 良好掌握 (僅失誤 1 次)</span>
+                        </div>`;
+                    domElements.reportGoodList.appendChild(li);
+                } else {
+                    li.className = 'report-item wrong';
+                    const encourageText = mistakes >= 5
+                        ? "💪 嘗試了許多次終究成功了，精神可嘉！下次一定會更順手！"
+                        : (mistakes >= 3 
+                            ? "💪 沒關係！勇敢嘗試是進步的開始，再練習一次就能解鎖囉！" 
+                            : "👍 已經很接近了，再多看一眼就能記熟喔！");
+                        
+                    li.innerHTML = `
+                        <div class="report-main-info">
+                            <span><strong>${item.word}</strong> (${item.chinese})</span>
+                            <span>❌ 失誤 ${mistakes} 次</span>
+                        </div>
+                        <div class="report-encourage">${encourageText}</div>`;
+                    domElements.reportWrongList.appendChild(li);
+                }
+            });
+
+            if (domElements.reportPerfectList.children.length === 0) {
+                domElements.reportPerfectList.innerHTML = "<li class='report-item good'>加油！下一次挑戰一定能達成 0 失誤完美掌握！</li>";
+            }
+            if (domElements.reportGoodList.children.length === 0) {
+                domElements.reportGoodList.innerHTML = "<li class='report-item perfect'>無失誤 1 次的生字。</li>";
+            }
+            if (domElements.reportWrongList.children.length === 0) {
+                domElements.reportWrongList.innerHTML = "<li class='report-item perfect'>🎉 太厲害了！沒有需要加強特訓的題目！</li>";
+            }
+
+            domElements.reportModal.classList.add('active');
+        }
+
+        function closeReportModal() { domElements.reportModal.classList.remove('active'); }
+
+        function returnToHome() { clearSpeechTimers(); if(isListening) stopListening(); showScreen('home'); }
+
+        // ================= 事件監聽 =================
+        domElements.btnSpeedToggle.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+            domElements.btnSpeedToggle.textContent = speeds[currentSpeedIndex].label;
+            initAudio();
+            const currentData = currentWordList[currentWordIndex];
+            const speechText = currentData.sentence 
+                ? currentData.sentence.replace("_____", currentData.word) 
+                : currentData.word;
+            playAudioOnce(speechText); 
+        });
+
+        domElements.btnMic.addEventListener('click', () => {
+            initAudio();
+            toggleSpeechRecognition();
+        });
+
+        document.getElementById('btn-hint').addEventListener('click', () => {
+            if (isProcessing) return; initAudio(); triggerSuperHint();
+        });
+
+        document.getElementById('btn-speak').addEventListener('click', () => { 
+            initAudio(); 
+            const currentData = currentWordList[currentWordIndex];
+            const isFillBlank = !!currentData.sentence;
+            const speechText = isFillBlank 
+                ? currentData.sentence.replace("_____", currentData.word) 
+                : currentData.word;
+            
+            playAudioByMode(speechText, isFillBlank);
+        });
+
+        domElements.wordDisplay.addEventListener('click', () => { domElements.mobileInput.focus(); });
+
+        domElements.mobileInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            if (val.length > 0) {
+                const char = val.charAt(val.length - 1);
+                if (/[a-z]/.test(char)) handleInput(char);
+                e.target.value = ""; 
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (screens.game.classList.contains('active') && !isProcessing) {
+                initAudio();
+                let key = "";
+                if (e.code && e.code.startsWith('Key')) {
+                    key = e.code.replace('Key', '').toLowerCase();
+                } else if (/^[a-zA-Z]$/.test(e.key)) {
+                    key = e.key.toLowerCase();
+                }
+                if (key) {
+                    e.preventDefault(); 
+                    handleInput(key);
+                }
+            }
+        });
+
+        loadVoices(); initHome();
+    </script>
+</body>
+</html>
