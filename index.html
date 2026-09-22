@@ -287,6 +287,135 @@
             .game-layout { grid-template-columns: 1fr; }
             .image-container { height: 230px; }
         }
+    
+        /* ================= 歷史成績與戰績榜 CSS ================= */
+        .history-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .history-stat-card {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 2px solid #93C5FD;
+            border-radius: 16px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .history-stat-card .stat-num {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--poke-blue);
+        }
+        .history-stat-card .stat-label {
+            font-size: 0.85rem;
+            color: #4B5563;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+        .unit-highscores-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: #F8FAFC;
+            padding: 10px;
+            border-radius: 14px;
+            border: 1px solid #E2E8F0;
+        }
+        .unit-highscore-item {
+            background: white;
+            border: 2px solid #FDE68A;
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .unit-highscore-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1F2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+        .unit-highscore-score {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #D97706;
+        }
+        .history-filter-select {
+            padding: 6px 14px;
+            border-radius: 12px;
+            border: 2px solid var(--poke-blue);
+            font-weight: bold;
+            color: var(--poke-dark-blue);
+            background: white;
+            outline: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .history-list-container {
+            max-height: 220px;
+            overflow-y: auto;
+            background: #F8FAFC;
+            padding: 10px;
+            border-radius: 14px;
+            border: 1px solid #E2E8F0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 10px 14px;
+            border-left: 5px solid var(--poke-blue);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+        .history-item-card.perfect-card {
+            border-left-color: #10B981;
+            background: #F0FDF4;
+        }
+        .history-item-card.good-card {
+            border-left-color: #F59E0B;
+        }
+        .history-item-date {
+            font-size: 0.8rem;
+            color: #6B7280;
+            margin-bottom: 2px;
+        }
+        .history-item-unit {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #1F2937;
+        }
+        .history-item-meta {
+            font-size: 0.8rem;
+            color: #4B5563;
+            margin-top: 3px;
+        }
+        .history-item-score-badge {
+            text-align: right;
+            min-width: 65px;
+        }
+        .history-score-val {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #D97706;
+        }
+        .history-perfect-score {
+            color: #059669;
+        }
+
     </style>
 </head>
 <body>
@@ -308,7 +437,8 @@
         <h1>⚡ 魔法拼字小學堂 ⚡</h1>
         <div class="nav-instruction">👉 請點擊下方按鈕選擇學習單元 👈</div>
         <div id="unit-list-home" class="top-nav"></div>
-        <div style="margin-top: 10px;">
+        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <button class="nav-btn" style="background-color: var(--poke-blue); color: white; border-color: var(--poke-dark-blue); box-shadow: 0 4px 0px var(--poke-dark-blue);" onclick="openHistoryModal()">🏆 查看歷史成績與戰績榜</button>
             <button class="nav-btn upload-btn" onclick="openUploadModal()">📤 上傳 / 管理自訂生字與填空單元</button>
         </div>
     </div>
@@ -370,8 +500,10 @@
         <h1 style="font-size: 2.2rem; color: var(--poke-blue);">太棒了！冒險完成！</h1>
         <p style="font-size: 1.2rem; color: #4A5568;">獲得總分：<span id="final-score" style="font-weight:bold; color:#D97706;">0</span> 分！</p>
         
-        <div style="display:flex; justify-content:center; gap:15px; margin-top:25px;">
-            <button class="nav-btn" style="background-color:var(--poke-blue); color:white;" onclick="openReportModal()">📋 查看學習成績單</button>
+        <div id="high-score-banner" style="display:none; margin: 10px auto; font-size:1.15rem; font-weight:bold; color:#B45309; background:#FEF3C7; border:2px solid #F59E0B; padding:6px 18px; border-radius:20px;"></div>
+        <div style="display:flex; justify-content:center; gap:12px; margin-top:25px; flex-wrap:wrap;">
+            <button class="nav-btn" style="background-color:var(--poke-blue); color:white;" onclick="openReportModal()">📋 查看本輪成績單</button>
+            <button class="nav-btn" style="background-color:#8B5CF6; color:white; border-color:#6D28D9; box-shadow:0 4px 0px #6D28D9;" onclick="openHistoryModal()">🏆 查看歷史成績與排行榜</button>
             <button class="nav-btn" onclick="returnToHome()">回到首頁</button>
         </div>
     </div>
@@ -394,6 +526,60 @@
             </div>
             <div style="text-align:center; margin-top:20px;">
                 <button class="nav-btn" onclick="closeReportModal()">關閉成績單</button>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- 歷史成績與戰績榜 Modal -->
+    <div class="modal-overlay" id="history-modal">
+        <div class="modal-card" style="max-width: 680px;">
+            <div class="modal-title">🏆 冒險戰績與榮譽榜 🏆</div>
+
+            <!-- 總覽數據統計 -->
+            <div class="history-stats-grid">
+                <div class="history-stat-card">
+                    <div class="stat-num" id="stat-total-games">0</div>
+                    <div class="stat-label">累計挑戰次數</div>
+                </div>
+                <div class="history-stat-card">
+                    <div class="stat-num" id="stat-perfect-games">0</div>
+                    <div class="stat-label">💯 滿分次數</div>
+                </div>
+                <div class="history-stat-card">
+                    <div class="stat-num" id="stat-avg-score">0</div>
+                    <div class="stat-label">歷史平均分</div>
+                </div>
+            </div>
+
+            <!-- 各單元最高分榮譽榜 -->
+            <div style="margin-top: 18px; text-align: left;">
+                <h3 style="color: var(--poke-dark-blue); font-size: 1.05rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>👑</span> 各課次最高分紀錄 (Hall of Fame)
+                </h3>
+                <div id="unit-highscores-container" class="unit-highscores-list">
+                    <!-- 動態生成各單元最高分 -->
+                </div>
+            </div>
+
+            <!-- 歷史詳細記錄與篩選 -->
+            <div style="margin-top: 20px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <h3 style="color: var(--poke-dark-blue); font-size: 1.05rem; margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <span>📜</span> 歷史歷程記錄
+                    </h3>
+                    <select id="history-unit-filter" class="history-filter-select" onchange="renderHistoryLogList()">
+                        <option value="all">🔍 篩選：全部課次</option>
+                    </select>
+                </div>
+                <div id="history-list-container" class="history-list-container">
+                    <!-- 動態載入歷史卡片 -->
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; border-top:1px solid #E2E8F0; padding-top:15px;">
+                <button class="action-btn cancel-btn" style="background-color:#EF4444; border-color:#B91C1C;" onclick="clearAllHistory()">🗑️ 清除歷史紀錄</button>
+                <button class="action-btn cancel-btn" onclick="closeHistoryModal()">關閉</button>
             </div>
         </div>
     </div>
@@ -437,7 +623,15 @@
 
     <!-- ================= 核心邏輯 ================= -->
     <script>
-        function getSvg(emoji) { return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='70' font-size='60' text-anchor='middle'>${emoji}</text></svg>`; }
+        function getSvg(emoji, label = "教材插圖未上傳") {
+            const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+                <rect width="100%" height="100%" fill="#F8FAFC" rx="20"/>
+                <text x="100" y="85" font-size="54" text-anchor="middle">${emoji}</text>
+                <text x="100" y="125" font-size="15" font-weight="bold" fill="#475569" text-anchor="middle" font-family="sans-serif">${label}</text>
+                <text x="100" y="152" font-size="11" fill="#94A3B8" text-anchor="middle" font-family="sans-serif">（請確認 GitHub 倉庫有上傳該課資料夾）</text>
+            </svg>`;
+            return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
+        }
 
         /** 
          * 預設內建資料庫 (僅留 Unit 1 & Unit 2)
@@ -523,6 +717,48 @@
                 { word: "recruit", chinese: "招募", imageUrl: "unit2/recruit.jpg" },
                 { word: "medicine", chinese: "藥物", imageUrl: "unit2/medicine.jpg" },
                 { word: "blanket", chinese: "毛毯", imageUrl: "unit2/blanket.jpg" }
+            ],
+            "Unit 3: Cook to win": [
+                { word: "bake", chinese: "烘烤", imageUrl: "unit3/bake.jpg" },
+                { word: "beat", chinese: "打", imageUrl: "unit3/beat.jpg" },
+                { word: "boil", chinese: "煮沸", imageUrl: "unit3/boil.jpg" },
+                { word: "chop", chinese: "切碎", imageUrl: "unit3/chop.jpg" },
+                { word: "fry", chinese: "煎炒", imageUrl: "unit3/fry.jpg" },
+                { word: "mix", chinese: "混合", imageUrl: "unit3/mix.jpg" },
+                { word: "pour", chinese: "倒", imageUrl: "unit3/pour.jpg" },
+                { word: "spread", chinese: "塗抹", imageUrl: "unit3/spread.jpg" },
+                { word: "sprinkle", chinese: "灑", imageUrl: "unit3/sprinkle.jpg" },
+                { word: "stir", chinese: "攪拌", imageUrl: "unit3/stir.jpg" },
+                { word: "chef", chinese: "廚師", imageUrl: "unit3/chef.jpg" },
+                { word: "give up", chinese: "放棄", imageUrl: "unit3/give up.jpg" },
+                { word: "mixture", chinese: "混合物", imageUrl: "unit3/mixture.jpg" },
+                { word: "spilled (spill) out", chinese: "溢出", imageUrl: "unit3/spilled (spill) out.jpg" },
+                { word: "continued (continue)", chinese: "繼續", imageUrl: "unit3/continued (continue).jpg" },
+                { word: "flour", chinese: "麵粉", imageUrl: "unit3/flour.jpg" },
+                { word: "icing", chinese: "糖霜", imageUrl: "unit3/icing.jpg" },
+                { word: "fresh", chinese: "新鮮的", imageUrl: "unit3/fresh.jpg" },
+                { word: "cream cheese", chinese: "忌廉芝士", imageUrl: "unit3/cream cheese.jpg" },
+                { word: "finally", chinese: "最終", imageUrl: "unit3/finally.jpg" },
+                { word: "judge", chinese: "評判", imageUrl: "unit3/judge.jpg" },
+                { word: "tripped (trip)", chinese: "絆倒", imageUrl: "unit3/tripped (trip).jpg" },
+                { word: "ingredients", chinese: "材料", imageUrl: "unit3/ingredients.jpg" },
+                { word: "contrasting", chinese: "有鮮明對比的", imageUrl: "unit3/contrasting.jpg" },
+                { word: "pasta", chinese: "意大利麵", imageUrl: "unit3/pasta.jpg" },
+                { word: "pepper", chinese: "胡椒粉", imageUrl: "unit3/pepper.jpg" },
+                { word: "Portuguese egg tart", chinese: "葡撻", imageUrl: "unit3/Portuguese egg tart.jpg" },
+                { word: "egg yolk", chinese: "蛋黃", imageUrl: "unit3/egg yolk.jpg" },
+                { word: "tablespoon", chinese: "大湯匙", imageUrl: "unit3/tablespoon.jpg" },
+                { word: "smooth", chinese: "順滑的", imageUrl: "unit3/smooth.jpg" },
+                { word: "cornflour", chinese: "玉米澱粉", imageUrl: "unit3/cornflour.jpg" },
+                { word: "vanilla extract", chinese: "香草精", imageUrl: "unit3/vanilla extract.jpg" },
+                { word: "puff pastry", chinese: "千層酥麵糰", imageUrl: "unit3/puff pastry.jpg" },
+                { word: "discs", chinese: "圓盤", imageUrl: "unit3/discs.jpg" },
+                { word: "serve", chinese: "端上", imageUrl: "unit3/serve.jpg" },
+                { word: "hire", chinese: "租借", imageUrl: "unit3/hire.jpg" },
+                { word: "wire", chinese: "金屬線", imageUrl: "unit3/wire.jpg" },
+                { word: "pure", chinese: "純淨的", imageUrl: "unit3/pure.jpg" },
+                { word: "cure", chinese: "治療", imageUrl: "unit3/cure.jpg" },
+                { word: "fear", chinese: "害怕", imageUrl: "unit3/fear.jpg" }
             ],
             "p6a_unit2_fillblank": [
                 {
@@ -1274,6 +1510,204 @@
             startGame(unitName);
         }
 
+
+        // ================= 歷史成績與成就查詢系統 =================
+        function saveGameResult(unit, scoreVal, mode, total, perfect) {
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem("pokemon_spelling_history") || "[]");
+            } catch(e) { history = []; }
+
+            const now = new Date();
+            const dateStr = now.getFullYear() + "/" + 
+                String(now.getMonth() + 1).padStart(2, "0") + "/" + 
+                String(now.getDate()).padStart(2, "0") + " " + 
+                String(now.getHours()).padStart(2, "0") + ":" + 
+                String(now.getMinutes()).padStart(2, "0");
+
+            let badge = "闖關成功 🏅";
+            if (scoreVal === 100) badge = "滿分大師 🌟";
+            else if (scoreVal >= 80) badge = "表現優異 👍";
+            else if (scoreVal >= 60) badge = "順利通關 🎯";
+            else badge = "繼續加油 💪";
+
+            const record = {
+                id: "rec_" + Date.now(),
+                date: dateStr,
+                timestamp: Date.now(),
+                unit: unit,
+                score: scoreVal,
+                mode: mode,
+                total: total,
+                perfect: perfect,
+                badge: badge
+            };
+
+            history.unshift(record);
+            if (history.length > 300) history = history.slice(0, 300);
+            localStorage.setItem("pokemon_spelling_history", JSON.stringify(history));
+
+            // 更新最高分排行榜
+            let highScores = {};
+            try {
+                highScores = JSON.parse(localStorage.getItem("pokemon_spelling_highscores") || "{}");
+            } catch(e) { highScores = {}; }
+
+            let isNewHigh = false;
+            const prevHigh = (highScores[unit] && highScores[unit].score !== undefined) ? highScores[unit].score : -1;
+            if (scoreVal > prevHigh) {
+                isNewHigh = true;
+                highScores[unit] = {
+                    score: scoreVal,
+                    date: dateStr,
+                    mode: mode
+                };
+                localStorage.setItem("pokemon_spelling_highscores", JSON.stringify(highScores));
+            }
+
+            return { record, isNewHigh, prevHigh };
+        }
+
+        function getStoredHistory() {
+            try { return JSON.parse(localStorage.getItem("pokemon_spelling_history") || "[]"); } catch(e) { return []; }
+        }
+
+        function getStoredHighScores() {
+            try { return JSON.parse(localStorage.getItem("pokemon_spelling_highscores") || "{}"); } catch(e) { return {}; }
+        }
+
+        function openHistoryModal() {
+            renderHistoryOverview();
+            renderHighScoresList();
+            populateHistoryUnitFilter();
+            renderHistoryLogList();
+            const modal = document.getElementById('history-modal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function renderHistoryOverview() {
+            const history = getStoredHistory();
+            const totalElem = document.getElementById('stat-total-games');
+            const perfectElem = document.getElementById('stat-perfect-games');
+            const avgElem = document.getElementById('stat-avg-score');
+            
+            if (!totalElem) return;
+            totalElem.textContent = history.length;
+            
+            const perfectCount = history.filter(h => h.score === 100).length;
+            perfectElem.textContent = perfectCount;
+            
+            if (history.length > 0) {
+                const sum = history.reduce((acc, h) => acc + (h.score || 0), 0);
+                avgElem.textContent = Math.round(sum / history.length);
+            } else {
+                avgElem.textContent = '0';
+            }
+        }
+
+        function renderHighScoresList() {
+            const container = document.getElementById('unit-highscores-container');
+            if (!container) return;
+            const highScores = getStoredHighScores();
+            const keys = Object.keys(highScores);
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<div style="color:#94A3B8; font-size:0.9rem; padding:12px; text-align:center; width:100%;">暫無最高分紀錄，快去挑戰一局吧！</div>';
+                return;
+            }
+            
+            container.innerHTML = keys.map(k => {
+                const item = highScores[k];
+                const isPerfect = item.score === 100;
+                const icon = isPerfect ? '👑' : '🏆';
+                return `
+                    <div class="unit-highscore-item">
+                        <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                            <span style="font-size:1.2rem;">${icon}</span>
+                            <div style="overflow:hidden;">
+                                <div class="unit-highscore-name" title="${k}">${k}</div>
+                                <div style="font-size:0.75rem; color:#6B7280;">${item.date || ''} (${item.mode || ''})</div>
+                            </div>
+                        </div>
+                        <div class="unit-highscore-score">${item.score} <span style="font-size:0.75rem; color:#6B7280;">分</span></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateHistoryUnitFilter() {
+            const select = document.getElementById('history-unit-filter');
+            if (!select) return;
+            const history = getStoredHistory();
+            const currentVal = select.value || 'all';
+            
+            const unitsSet = new Set(history.map(h => h.unit));
+            if (typeof rawGameData !== 'undefined') {
+                Object.keys(rawGameData).forEach(u => unitsSet.add(u));
+            }
+            
+            let html = '<option value="all">🔍 篩選：全部課次</option>';
+            Array.from(unitsSet).sort().forEach(u => {
+                if (!u) return;
+                const selected = u === currentVal ? 'selected' : '';
+                html += `<option value="${u}" ${selected}>${u}</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        function renderHistoryLogList() {
+            const container = document.getElementById('history-list-container');
+            const filterSelect = document.getElementById('history-unit-filter');
+            if (!container) return;
+            
+            const filterUnit = filterSelect ? filterSelect.value : 'all';
+            let history = getStoredHistory();
+            
+            if (filterUnit !== 'all') {
+                history = history.filter(h => h.unit === filterUnit);
+            }
+            
+            if (history.length === 0) {
+                container.innerHTML = '<div style="color:#94A3B8; font-size:0.9rem; padding:20px; text-align:center;">此單元尚無挑戰紀錄，前往挑戰解鎖徽章！</div>';
+                return;
+            }
+            
+            container.innerHTML = history.map(h => {
+                const isPerfect = h.score === 100;
+                const cardClass = isPerfect ? 'history-item-card perfect-card' : (h.score >= 80 ? 'history-item-card good-card' : 'history-item-card');
+                const scoreClass = isPerfect ? 'history-score-val history-perfect-score' : 'history-score-val';
+                return `
+                    <div class="${cardClass}">
+                        <div>
+                            <div class="history-item-date">📅 ${h.date}</div>
+                            <div class="history-item-unit">${h.unit}</div>
+                            <div class="history-item-meta">🎯 ${h.mode || '挑戰'} ｜ 掌握度：一次按對 ${h.perfect || 0}/${h.total || 0} 題 ｜ ${h.badge || ''}</div>
+                        </div>
+                        <div class="history-item-score-badge">
+                            <div class="${scoreClass}">${h.score}<span style="font-size:0.8rem; color:#6B7280;">分</span></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearAllHistory() {
+            if (confirm("⚠️ 確定要清除所有歷史成績與最高分紀錄嗎？\n清除後將無法復原喔！")) {
+                localStorage.removeItem('pokemon_spelling_history');
+                localStorage.removeItem('pokemon_spelling_highscores');
+                renderHistoryOverview();
+                renderHighScoresList();
+                populateHistoryUnitFilter();
+                renderHistoryLogList();
+                alert("已成功清除所有成績紀錄！");
+            }
+        }
+
         // ================= 遊戲核心 =================
         function initHome() {
             loadCustomUnitsFromStorage();
@@ -1379,7 +1813,7 @@
 
             updateStatusUI(); 
             
-            const fallbackSvg = getSvg("🖼️");
+            const fallbackSvg = getSvg("📖", "教材插圖未上傳");
             if(currentData.imageUrl) { 
                 domElements.wordImage.innerHTML = `<img src="${currentData.imageUrl}" alt="插圖" onerror="this.onerror=null; this.src='${fallbackSvg}';">`; 
             }
@@ -1555,6 +1989,22 @@
             clearSpeechTimers();
             const finalScoreVal = Math.round(score);
             domElements.finalScore.textContent = finalScoreVal;
+
+            // 自動儲存成績與最高分
+            const modeLabel = wordLimit > 0 ? `${wordLimit} 題模式` : '全部題目';
+            const perfectCount = sessionWordList.filter(item => (wordMistakeTracker[item.word] || 0) === 0).length;
+            const saveRes = saveGameResult(currentUnitKey, finalScoreVal, modeLabel, sessionWordList.length, perfectCount);
+
+            const banner = document.getElementById('high-score-banner');
+            if (banner) {
+                if (saveRes && saveRes.isNewHigh) {
+                    banner.style.display = 'inline-block';
+                    banner.textContent = `🎉 刷新本課最高分紀錄：${finalScoreVal} 分！`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+
             playTone('victory'); 
             playAudioOnce("Excellent! Unit completed!");
             showScreen('result'); 
